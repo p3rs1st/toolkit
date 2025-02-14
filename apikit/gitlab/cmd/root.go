@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"toolkit/apikit/gitlab/cmd/branch"
 	"toolkit/apikit/gitlab/cmd/config"
 	mergerequest "toolkit/apikit/gitlab/cmd/merge_request"
 	"toolkit/apikit/gitlab/cmd/project"
@@ -17,7 +18,7 @@ func NewGitlabCommand() *cobra.Command {
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	var op types.RootOptions
+	op := &types.RootOptions{}
 
 	cmd.PersistentFlags().StringVarP(
 		&op.ConfigFilepath,
@@ -27,9 +28,10 @@ func NewGitlabCommand() *cobra.Command {
 		"Path to the config file",
 	)
 
-	cmd.AddCommand(config.NewConfigCommand(&op))
-	cmd.AddCommand(project.NewProjectCommand(&op))
-	cmd.AddCommand(mergerequest.NewMergeRequestCommand(&op))
+	cmd.AddCommand(config.NewConfigCommand(op))
+	cmd.AddCommand(project.NewProjectCommand(op))
+	cmd.AddCommand(mergerequest.NewMergeRequestCommand(op))
+	cmd.AddCommand(branch.NewBranchCommand(op))
 
 	return cmd
 }

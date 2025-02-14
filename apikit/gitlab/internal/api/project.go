@@ -26,6 +26,29 @@ type Project struct {
 	DefaultBranch     string `json:"default_branch"`
 }
 
+func CreateProjectBranch(conf types.Config, projectID int, branch, ref string) error {
+	client, req := AuthRequest(conf)
+	defer client.Close()
+
+	res, err := req.
+		SetBody(map[string]string{
+			"branch": branch,
+			"ref":    ref,
+		}).
+		Post(conf.BaseURL + "/api/v4/projects/" + strconv.Itoa(projectID) + "/repository/branches")
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode() == 201 {
+		return nil
+	} else if res.StatusCode() == 401 {
+		return ErrNoAuthorization
+	}
+
+	return fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+}
+
 func GetProject(conf types.Config, projectID int) (Project, error) {
 	client, req := AuthRequest(conf)
 	defer client.Close()

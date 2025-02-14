@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"toolkit/apikit/gitlab/cmd/util"
 	"toolkit/apikit/gitlab/internal/api"
 	"toolkit/apikit/gitlab/internal/types"
-	"toolkit/apikit/gitlab/pkg"
 
 	"github.com/spf13/cobra"
 )
@@ -17,17 +17,9 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 	removeSourceBranch := false
 
 	cmd := &cobra.Command{
-		Use:   "create projectName/projectID[,projectName1/projectID1] sourceBranch [targetBranch]",
-		Short: "Create a new merge request",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
-				return err
-			}
-			if err := cobra.MaximumNArgs(3)(cmd, args); err != nil {
-				return err
-			}
-			return nil
-		},
+		Use:          "create projectName/projectID[,projectName1/projectID1,...] sourceBranch [targetBranch]",
+		Short:        "Create a new merge request",
+		Args:         cobra.RangeArgs(2, 3),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectIDNames := strings.Split(args[0], ",")
@@ -39,37 +31,11 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 			targetBranches := []string{}
 
 			for _, projectIDName := range projectIDNames {
-				projectID, err := strconv.Atoi(projectIDName)
-				project := api.Project{}
+				project, err := util.GetProjectByIDName(conf, projectIDName)
 				if err != nil {
-					projectName := projectIDName
-					projects, err := api.ListProjects(
-						conf, api.ListProjectsOption{SearchName: projectName},
-					)
-					if err != nil {
-						return err
-					}
-					projects = pkg.FilterFunc(projects, func(p api.Project) bool { return p.Name == projectName })
-					if len(projects) == 0 {
-						return fmt.Errorf("project %q not found", projectName)
-					}
-					if len(projects) > 1 {
-						return fmt.Errorf(
-							"multiple projects found: %q",
-							strings.Join(
-								pkg.MapFunc(projects, func(p api.Project) string { return p.PathWithNamespace }),
-								", ",
-							),
-						)
-					}
-					project = projects[0]
-					projectID = projects[0].ID
-				} else {
-					project, err = api.GetProject(conf, projectID)
-					if err != nil {
-						return err
-					}
+					return err
 				}
+				projectID := project.ID
 
 				sourceBranch := args[1]
 				targetBranch := project.DefaultBranch
@@ -111,8 +77,9 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 				}
 				webURLs = append(webURLs, mr.WebURL)
 			}
-			cmd.Printf("merge requests created:\n%s\n", strings.Join(webURLs, "\n"))
-
+			if len(webURLs) > 0 {
+				cmd.Printf("merge requests created:\n%s\n", strings.Join(webURLs, "\n"))
+			}
 			if len(errs) > 0 {
 				return errors.Join(errs...)
 			}
