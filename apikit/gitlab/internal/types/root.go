@@ -1,9 +1,11 @@
 package types
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
+	"toolkit/apikit/gitlab/pkg"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,8 +25,12 @@ type RootOptions struct {
 	config Config
 }
 
-func (o *RootOptions) GetConfig(cmd *cobra.Command) Config {
-	o.once.Do(func() {
+const (
+	defaultCurrentContext string = "default"
+)
+
+func loadConfig(o *RootOptions, cmd *cobra.Command) func() {
+	return func() {
 		o.viper = viper.New()
 		if info, err := os.Stat(o.ConfigFilepath); err != nil {
 			if err := os.MkdirAll(filepath.Dir(o.ConfigFilepath), 0755); err != nil {
@@ -40,7 +46,7 @@ func (o *RootOptions) GetConfig(cmd *cobra.Command) Config {
 			os.Exit(1)
 		}
 		o.viper.SetConfigFile(o.ConfigFilepath)
-		o.viper.SetDefault("base_url", "https://gitlab.com")
+		o.viper.SetDefault("current-context", defaultCurrentContext)
 		if err := o.viper.ReadInConfig(); err != nil {
 			cmd.PrintErrf("Error reading config file %q\n  %v\n", o.ConfigFilepath, err)
 			os.Exit(1)
@@ -49,12 +55,65 @@ func (o *RootOptions) GetConfig(cmd *cobra.Command) Config {
 			cmd.PrintErrf("Error parsing config file %q\n  %v\n", o.ConfigFilepath, err)
 			os.Exit(1)
 		}
-	})
+		if o.config.CurrentContext == "" {
+			o.config.CurrentContext = defaultCurrentContext
+		}
+		ctx := o.config.GetCurrentContext()
+		if o.config.Contexts.GetByName(o.config.CurrentContext) == nil {
+			o.config.Contexts = append(o.config.Contexts, ctx)
+		}
+	}
+}
+
+func (o *RootOptions) GetConfig(cmd *cobra.Command) ConfigContext {
+	o.once.Do(loadConfig(o, cmd))
+	return o.config.GetCurrentContext()
+}
+
+func (o *RootOptions) GetRawConfig(cmd *cobra.Command) Config {
+	o.once.Do(loadConfig(o, cmd))
 	return o.config
 }
 
-func (o *RootOptions) MergeSaveConfig(cmd *cobra.Command, confMap map[string]any) {
-	_ = o.GetConfig(cmd)
+func (o *RootOptions) SaveCurrentContext(cmd *cobra.Command, name string) {
+	config := o.GetRawConfig(cmd)
+	if config.Contexts.GetByName(name) == nil {
+		o.MergeSaveConfigContext(cmd, config.GetCurrentContext())
+	}
+	if err := o.viper.MergeConfigMap(map[string]any{"current-context": name}); err != nil {
+		cmd.PrintErrf("Error merging config\n  %v\n", err)
+		os.Exit(1)
+	}
+	if err := o.viper.WriteConfig(); err != nil {
+		cmd.PrintErrf("Error writing config file %q\n  %v\n", o.ConfigFilepath, err)
+		os.Exit(1)
+	}
+}
+
+func (o *RootOptions) MergeSaveConfigContext(cmd *cobra.Command, configContext ConfigContext) {
+	config := o.GetRawConfig(cmd)
+	ctxs := config.Contexts
+	idx := ctxs.GetIdxByName(config.CurrentContext)
+	if idx == -1 {
+		config.Contexts = append(config.Contexts, configContext)
+	} else {
+		ctxs[idx] = configContext
+	}
+	confMap := map[string]any{
+		"contexts": pkg.MapFunc(ctxs, func(ctx ConfigContext) map[string]any {
+			ctxBytes, err := json.Marshal(ctx)
+			if err != nil {
+				cmd.PrintErrf("Error marshaling context %q\n  %v\n", ctx.Name, err)
+				os.Exit(1)
+			}
+			ctxMap := map[string]any{}
+			if err := json.Unmarshal(ctxBytes, &ctxMap); err != nil {
+				cmd.PrintErrf("Error unmarshaling context %q\n  %v\n", ctx.Name, err)
+				os.Exit(1)
+			}
+			return ctxMap
+		}),
+	}
 	if err := o.viper.MergeConfigMap(confMap); err != nil {
 		cmd.PrintErrf("Error merging config\n  %v\n", err)
 		os.Exit(1)
@@ -65,12 +124,19 @@ func (o *RootOptions) MergeSaveConfig(cmd *cobra.Command, confMap map[string]any
 	}
 }
 
-func (o *RootOptions) AllKeys(cmd *cobra.Command) []string {
-	_ = o.GetConfig(cmd)
-	return o.viper.AllKeys()
-}
-
 func (o *RootOptions) AllSettings(cmd *cobra.Command) map[string]any {
-	_ = o.GetConfig(cmd)
-	return o.viper.AllSettings()
+	o.once.Do(loadConfig(o, cmd))
+	settings := o.viper.AllSettings()
+	ctxInterface := settings["contexts"].([]interface{})
+	ctxs := make([]map[string]any, len(ctxInterface))
+	for i, ctx := range ctxInterface {
+		ctxMap, _ := ctx.(map[string]any)
+		ctxs[i] = ctxMap
+	}
+	for i, ctx := range ctxs {
+		if token, ok := ctx["token"].(string); ok && token != "" {
+			ctxs[i]["token"] = "*****"
+		}
+	}
+	return settings
 }

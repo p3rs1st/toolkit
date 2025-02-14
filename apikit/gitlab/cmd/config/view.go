@@ -17,9 +17,6 @@ func NewViewCommand(op *types.RootOptions) *cobra.Command {
 			util.RequireNoArguments(cmd, args)
 
 			settings := op.AllSettings(cmd)
-			if _, ok := settings["token"]; ok {
-				settings["token"] = "*****"
-			}
 			settingsYAML, err := yaml.Marshal(settings)
 			if err != nil {
 				return err

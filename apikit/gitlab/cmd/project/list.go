@@ -23,13 +23,14 @@ func NewListCommand(op *types.RootOptions) *cobra.Command {
 				return err
 			}
 
-			t := table.NewWriter()
-			t.SetOutputMirror(cmd.OutOrStdout())
-			t.AppendHeader(table.Row{"Name", "Path With Namespace", "ID"})
-			for _, project := range projects {
-				t.AppendRow(table.Row{project.Name, project.PathWithNamespace, project.ID})
-			}
-			t.Render()
+			util.RenderTable(
+				cmd,
+				table.Row{"Name", "Path With Namespace", "ID"},
+				projects,
+				func(p api.Project) []interface{} {
+					return []interface{}{p.Name, p.PathWithNamespace, p.ID}
+				},
+			)
 
 			return nil
 		},

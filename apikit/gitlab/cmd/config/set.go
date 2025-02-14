@@ -16,6 +16,7 @@ import (
 
 func NewSetCommand(op *types.RootOptions) *cobra.Command {
 	showKeys := false
+	keys := []string{"base_url", "token"}
 
 	cmd := &cobra.Command{
 		Use:          "set key value",
@@ -37,23 +38,25 @@ func NewSetCommand(op *types.RootOptions) *cobra.Command {
 			if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 				return err
 			}
-			if !slices.Contains(op.AllKeys(cmd), args[0]) {
+			if !slices.Contains(keys, args[0]) {
 				return errors.New("Invalid config key: " + args[0])
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if showKeys {
-				cmd.Printf("config keys:\n%s\n", strings.Join(op.AllKeys(cmd), " "))
+				cmd.Printf("config keys:\n%s\n", strings.Join(keys, " "))
 				return nil
 			}
 
+			conf := op.GetConfig(cmd)
 			args[0] = strings.ToLower(args[0])
 			if args[0] == "base_url" {
 				uri, err := url.ParseRequestURI(args[1])
 				if err != nil || (uri.Scheme != "http" && uri.Scheme != "https") || uri.Host == "" {
 					return fmt.Errorf("%q is not a valid URL", args[1])
 				}
+				conf.BaseURL = args[1]
 			} else if args[0] == "token" {
 				cmd.Print("Enter your token: ")
 				tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
@@ -63,7 +66,6 @@ func NewSetCommand(op *types.RootOptions) *cobra.Command {
 				}
 
 				args = append(args, string(tokenBytes))
-				conf := op.GetConfig(cmd)
 				conf.Token = args[1]
 				if ok, err := api.CheckAccessToken(conf); !ok {
 					if err == nil {
@@ -72,7 +74,7 @@ func NewSetCommand(op *types.RootOptions) *cobra.Command {
 					return err
 				}
 			}
-			op.MergeSaveConfig(cmd, map[string]any{args[0]: args[1]})
+			op.MergeSaveConfigContext(cmd, conf)
 
 			return nil
 		},

@@ -26,7 +26,7 @@ type Project struct {
 	DefaultBranch     string `json:"default_branch"`
 }
 
-func CreateProjectBranch(conf types.Config, projectID int, branch, ref string) error {
+func CreateProjectBranch(conf types.ConfigContext, projectID int, branch, ref string) error {
 	client, req := AuthRequest(conf)
 	defer client.Close()
 
@@ -49,7 +49,7 @@ func CreateProjectBranch(conf types.Config, projectID int, branch, ref string) e
 	return fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
 }
 
-func GetProject(conf types.Config, projectID int) (Project, error) {
+func GetProject(conf types.ConfigContext, projectID int) (Project, error) {
 	client, req := AuthRequest(conf)
 	defer client.Close()
 
@@ -72,7 +72,7 @@ func GetProject(conf types.Config, projectID int) (Project, error) {
 	return Project{}, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
 }
 
-func ListProjects(conf types.Config, op ListProjectsOption) ([]Project, error) {
+func ListProjects(conf types.ConfigContext, op ListProjectsOption) ([]Project, error) {
 	projects := []Project{}
 	lastProjectID := 0
 	for {
@@ -101,7 +101,7 @@ func ListProjects(conf types.Config, op ListProjectsOption) ([]Project, error) {
 	}
 }
 
-func ListProjectBranches(conf types.Config, projectID int, op ListProjectBranchesOption) ([]Branch, error) {
+func ListProjectBranches(conf types.ConfigContext, projectID int, op ListProjectBranchesOption) ([]Branch, error) {
 	branches := []Branch{}
 	page := 1
 	for {
@@ -127,7 +127,7 @@ func ListProjectBranches(conf types.Config, projectID int, op ListProjectBranche
 	}
 }
 
-func listProjects(conf types.Config, params map[string]string) ([]Project, error) {
+func listProjects(conf types.ConfigContext, params map[string]string) ([]Project, error) {
 	client, req := AuthRequest(conf)
 	defer client.Close()
 
@@ -151,7 +151,7 @@ func listProjects(conf types.Config, params map[string]string) ([]Project, error
 	return nil, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
 }
 
-func listProjectBranches(conf types.Config, projectID int, params map[string]string) ([]Branch, error) {
+func listProjectBranches(conf types.ConfigContext, projectID int, params map[string]string) ([]Branch, error) {
 	client, req := AuthRequest(conf)
 	defer client.Close()
 

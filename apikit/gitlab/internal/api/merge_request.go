@@ -16,7 +16,7 @@ type MergeRequest struct {
 }
 
 func CreateMergeRequest(
-	conf types.Config, project, sourceBranch, targetBranch, title string, op CreateMergeRequestOption,
+	conf types.ConfigContext, project, sourceBranch, targetBranch, title string, op CreateMergeRequestOption,
 ) (MergeRequest, error) {
 
 	client, req := AuthRequest(conf)

@@ -12,7 +12,7 @@ var (
 	perPageStr string = strconv.Itoa(perPage)
 )
 
-func AuthRequest(conf types.Config) (*resty.Client, *resty.Request) {
+func AuthRequest(conf types.ConfigContext) (*resty.Client, *resty.Request) {
 	if conf.Token == "" {
 		// mark token as invalid
 		conf.Token = "*"

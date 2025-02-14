@@ -17,5 +17,18 @@ func NewConfigCommand(op *types.RootOptions) *cobra.Command {
 	cmd.AddCommand(NewSetCommand(op))
 	cmd.AddCommand(NewViewCommand(op))
 
+	cmd.AddGroup(
+		&cobra.Group{
+			ID:    "1",
+			Title: "Use context",
+		},
+		&cobra.Group{
+			ID:    "2",
+			Title: "Get Contexts",
+		},
+	)
+	cmd.AddCommand(NewUseContextCommand(op))
+	cmd.AddCommand(NewGetContextsCommand(op))
+
 	return cmd
 }

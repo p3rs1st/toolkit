@@ -7,7 +7,7 @@ import (
 
 var ErrNoAuthorization = fmt.Errorf("access token is invalid or expired")
 
-func CheckAccessToken(conf types.Config) (bool, error) {
+func CheckAccessToken(conf types.ConfigContext) (bool, error) {
 	client, req := AuthRequest(conf)
 	defer client.Close()
 	res, err := req.Get(conf.BaseURL + "/api/v4/personal_access_tokens")

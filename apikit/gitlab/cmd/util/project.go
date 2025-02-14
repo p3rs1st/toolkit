@@ -9,7 +9,7 @@ import (
 	"toolkit/apikit/gitlab/pkg"
 )
 
-func GetProjectByIDName(conf types.Config, projectIDName string) (api.Project, error) {
+func GetProjectByIDName(conf types.ConfigContext, projectIDName string) (api.Project, error) {
 	projectID, err := strconv.Atoi(projectIDName)
 	var project api.Project
 	if err != nil {
