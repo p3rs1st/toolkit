@@ -4,4 +4,4 @@
 
 ## 安装
 
-`go install main.go`
+`go install`
