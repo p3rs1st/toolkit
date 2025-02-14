@@ -21,6 +21,7 @@ func NewSetCommand(op *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "set key value",
 		Short:        "Set specified config to configuration file",
+		GroupID:      "config sub",
 		SilenceUsage: true,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if showKeys {

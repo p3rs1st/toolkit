@@ -8,9 +8,10 @@ import (
 
 func NewUseContextCommand(op *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "use-context context",
-		Short: "Use a specific context from the config file",
-		Args:  cobra.ExactArgs(1),
+		Use:     "use-context context",
+		Short:   "Use a specific context from the config file",
+		GroupID: "context",
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			op.SaveCurrentContext(cmd, args[0])
 		},

@@ -19,12 +19,12 @@ func NewConfigCommand(op *types.RootOptions) *cobra.Command {
 
 	cmd.AddGroup(
 		&cobra.Group{
-			ID:    "1",
-			Title: "Use context",
+			ID:    "config sub",
+			Title: "Operate configuration",
 		},
 		&cobra.Group{
-			ID:    "2",
-			Title: "Get Contexts",
+			ID:    "context",
+			Title: "Context",
 		},
 	)
 	cmd.AddCommand(NewUseContextCommand(op))

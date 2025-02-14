@@ -10,9 +10,10 @@ import (
 
 func NewGetContextsCommand(op *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get-contexts",
-		Short: "Use a specific context from the config file",
-		Args:  cobra.NoArgs,
+		Use:     "get-contexts",
+		Short:   "Use a specific context from the config file",
+		GroupID: "context",
+		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			config := op.GetRawConfig(cmd)
 

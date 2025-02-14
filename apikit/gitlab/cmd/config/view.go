@@ -12,6 +12,7 @@ func NewViewCommand(op *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "view",
 		Short:        "View the current configuration",
+		GroupID:      "config sub",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			util.RequireNoArguments(cmd, args)
