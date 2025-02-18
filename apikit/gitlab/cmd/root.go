@@ -27,6 +27,13 @@ func NewGitlabCommand() *cobra.Command {
 		types.DefaultConfigPath,
 		"Path to the config file",
 	)
+	cmd.PersistentFlags().StringVarP(
+		&op.CurrentContext,
+		"context",
+		"t",
+		"",
+		"Tempoary override for current context",
+	)
 
 	cmd.AddCommand(config.NewConfigCommand(op))
 	cmd.AddCommand(project.NewProjectCommand(op))

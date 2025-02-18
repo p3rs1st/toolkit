@@ -19,6 +19,7 @@ var (
 
 type RootOptions struct {
 	ConfigFilepath string
+	CurrentContext string
 
 	viper  *viper.Viper
 	once   sync.Once
@@ -57,6 +58,9 @@ func loadConfig(o *RootOptions, cmd *cobra.Command) func() {
 		}
 		if o.config.CurrentContext == "" {
 			o.config.CurrentContext = defaultCurrentContext
+		}
+		if o.CurrentContext != "" {
+			o.config.CurrentContext = o.CurrentContext
 		}
 		ctx := o.config.GetCurrentContext()
 		if o.config.Contexts.GetByName(o.config.CurrentContext) == nil {

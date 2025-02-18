@@ -5,3 +5,5 @@
 ## 安装
 
 `go install`
+
+安装补全: `source <(gitlab completion zsh)` (zsh|bash|powershell)
