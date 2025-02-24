@@ -16,6 +16,7 @@ import (
 
 func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 	removeSourceBranch := false
+	title := ""
 
 	cmd := &cobra.Command{
 		Use:          "create projectName/projectID[,projectName1/projectID1,...] sourceBranch [targetBranch]",
@@ -109,12 +110,17 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 			for i, projectID := range projectIDs {
 				sourceBranch, targetBranch := sourceBranches[i], targetBranches[i]
 
+				curTitle := title
+				if curTitle == "" {
+					curTitle = fmt.Sprintf("Merge %s into %s", sourceBranch, targetBranch)
+				}
+
 				mr, err := api.CreateMergeRequest(
 					conf,
 					strconv.Itoa(projectID),
 					sourceBranch,
 					targetBranch,
-					fmt.Sprintf("Merge %s into %s", sourceBranch, targetBranch),
+					curTitle,
 					api.CreateMergeRequestOption{RemoveSourceBranch: removeSourceBranch},
 				)
 				if err != nil {
@@ -134,6 +140,7 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&removeSourceBranch, "rm", "r", false, "remove source branch after merge")
+	cmd.Flags().StringVar(&title, "title", "", "title of the merge request")
 
 	return cmd
 }
