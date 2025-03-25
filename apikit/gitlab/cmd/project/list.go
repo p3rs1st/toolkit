@@ -15,9 +15,8 @@ func NewListCommand(op *types.RootOptions) *cobra.Command {
 		Aliases:      []string{"list"},
 		Short:        "List all projects",
 		SilenceUsage: true,
+		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			util.RequireNoArguments(cmd, args)
-
 			projects, err := api.ListProjects(op.GetConfig(cmd), api.ListProjectsOption{})
 			if err != nil {
 				return err

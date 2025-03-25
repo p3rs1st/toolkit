@@ -3,9 +3,11 @@ package branch
 import (
 	"errors"
 	"strings"
+
 	"toolkit/apikit/gitlab/cmd/util"
 	"toolkit/apikit/gitlab/internal/api"
 	"toolkit/apikit/gitlab/internal/types"
+	"toolkit/apikit/gitlab/pkg"
 
 	"github.com/spf13/cobra"
 )
@@ -16,6 +18,37 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 		Short:        "Create a branch",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(3),
+		ValidArgsFunction: func(
+			cmd *cobra.Command, args []string, toComplete string,
+		) ([]string, cobra.ShellCompDirective) {
+			conf := op.GetConfig(cmd)
+			if len(args) == 0 {
+				projects, err := api.ListProjects(
+					conf,
+					api.ListProjectsOption{SearchName: toComplete},
+				)
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveError
+				}
+				return pkg.MapFunc(
+					projects,
+					func(p api.Project) string { return p.Name },
+				), cobra.ShellCompDirectiveNoFileComp
+			}
+			if len(args) == 1 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+
+			keys, err := util.ListUnionProjectBranches(
+				conf,
+				strings.Split(args[0], ","),
+				toComplete,
+			)
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveError
+			}
+			return keys, cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectIDNames := strings.Split(args[0], ",")
 			conf := op.GetConfig(cmd)
@@ -43,7 +76,11 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 			}
 
 			if len(successProjects) > 0 {
-				cmd.Printf("branch %s created in projects:\n%s\n", newBranch, strings.Join(successProjects, " "))
+				cmd.Printf(
+					"branch %s created in projects:\n%s\n",
+					newBranch,
+					strings.Join(successProjects, " "),
+				)
 			}
 			if len(errs) > 0 {
 				return errors.Join(errs...)

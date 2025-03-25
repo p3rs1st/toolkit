@@ -21,11 +21,12 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "create projectName/projectID[,projectName1/projectID1,...] sourceBranch [targetBranch]",
 		Short:        "Create a new merge request",
-		Args:         cobra.RangeArgs(2, 3),
 		SilenceUsage: true,
+		Args:         cobra.RangeArgs(2, 3),
 		ValidArgsFunction: func(
 			cmd *cobra.Command, args []string, toComplete string,
 		) ([]string, cobra.ShellCompDirective) {
+
 			conf := op.GetConfig(cmd)
 			if len(args) == 0 {
 				projects, err := api.ListProjects(conf, api.ListProjectsOption{SearchName: toComplete})
@@ -34,37 +35,10 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 				}
 				return pkg.MapFunc(projects, func(p api.Project) string { return p.Name }), cobra.ShellCompDirectiveNoFileComp
 			}
-			var branchSet map[string]struct{}
-			projectIDNames := strings.Split(args[0], ",")
-			for _, projectIDName := range projectIDNames {
-				project, err := util.GetProjectByIDName(conf, projectIDName)
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveError
-				}
-				branches, err := api.ListProjectBranches(
-					conf, project.ID, api.ListProjectBranchesOption{SearchName: toComplete},
-				)
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveError
-				}
 
-				set := make(map[string]struct{})
-				for _, branch := range branches {
-					set[branch.Name] = struct{}{}
-				}
-				if branchSet == nil {
-					branchSet = set
-				} else {
-					for branch := range branchSet {
-						if _, ok := set[branch]; !ok {
-							delete(branchSet, branch)
-						}
-					}
-				}
-			}
-			keys := make([]string, 0, len(branchSet))
-			for k := range branchSet {
-				keys = append(keys, k)
+			keys, err := util.ListUnionProjectBranches(conf, strings.Split(args[0], ","), toComplete)
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveError
 			}
 			return keys, cobra.ShellCompDirectiveNoFileComp
 		},

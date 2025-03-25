@@ -1,7 +1,6 @@
 package config
 
 import (
-	"toolkit/apikit/gitlab/cmd/util"
 	"toolkit/apikit/gitlab/internal/types"
 
 	"github.com/spf13/cobra"
@@ -14,9 +13,8 @@ func NewViewCommand(op *types.RootOptions) *cobra.Command {
 		Short:        "View the current configuration",
 		GroupID:      "config sub",
 		SilenceUsage: true,
+		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			util.RequireNoArguments(cmd, args)
-
 			settings := op.AllSettings(cmd)
 			settingsYAML, err := yaml.Marshal(settings)
 			if err != nil {

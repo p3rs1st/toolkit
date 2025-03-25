@@ -43,3 +43,38 @@ func GetProjectByIDName(conf types.ConfigContext, projectIDName string) (api.Pro
 
 	return project, nil
 }
+
+func ListUnionProjectBranches(conf types.ConfigContext, projectIDNames []string, searchBranch string) ([]string, error) {
+	var branchSet map[string]struct{}
+	for _, projectIDName := range projectIDNames {
+		project, err := GetProjectByIDName(conf, projectIDName)
+		if err != nil {
+			return nil, err
+		}
+		branches, err := api.ListProjectBranches(
+			conf, project.ID, api.ListProjectBranchesOption{SearchName: searchBranch},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		set := make(map[string]struct{})
+		for _, branch := range branches {
+			set[branch.Name] = struct{}{}
+		}
+		if branchSet == nil {
+			branchSet = set
+		} else {
+			for branch := range branchSet {
+				if _, ok := set[branch]; !ok {
+					delete(branchSet, branch)
+				}
+			}
+		}
+	}
+	keys := make([]string, 0, len(branchSet))
+	for k := range branchSet {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
