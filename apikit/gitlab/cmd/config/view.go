@@ -7,15 +7,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func NewViewCommand(op *types.RootOptions) *cobra.Command {
+func NewViewCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "view",
 		Short:        "View the current configuration",
 		GroupID:      "config sub",
 		SilenceUsage: true,
 		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			settings := op.AllSettings(cmd)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			settings := option.AllSettings(cmd)
 			settingsYAML, err := yaml.Marshal(settings)
 			if err != nil {
 				return err

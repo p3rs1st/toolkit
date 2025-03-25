@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+
 	"toolkit/apikit/gitlab/internal/types"
 )
 
@@ -46,7 +47,7 @@ func CreateProjectBranch(conf types.ConfigContext, projectID int, branch, ref st
 		return ErrNoAuthorization
 	}
 
-	return fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+	return fmt.Errorf("%w: %d, %s", errHTTPCode, res.StatusCode(), res.String())
 }
 
 func GetProject(conf types.ConfigContext, projectID int) (Project, error) {
@@ -64,17 +65,19 @@ func GetProject(conf types.ConfigContext, projectID int) (Project, error) {
 		if err := json.Unmarshal(res.Bytes(), &project); err != nil {
 			return Project{}, err
 		}
+
 		return project, nil
 	} else if res.StatusCode() == 401 {
 		return Project{}, ErrNoAuthorization
 	}
 
-	return Project{}, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+	return Project{}, fmt.Errorf("%w: %d, %s", errHTTPCode, res.StatusCode(), res.String())
 }
 
-func ListProjects(conf types.ConfigContext, op ListProjectsOption) ([]Project, error) {
+func ListProjects(conf types.ConfigContext, option ListProjectsOption) ([]Project, error) {
 	projects := []Project{}
 	lastProjectID := 0
+
 	for {
 		params := map[string]string{
 			"membership": "true",
@@ -83,17 +86,21 @@ func ListProjects(conf types.ConfigContext, op ListProjectsOption) ([]Project, e
 			"id_after":   strconv.Itoa(lastProjectID),
 			"per_page":   perPageStr,
 		}
-		if op.SearchName != "" {
-			params["search"] = op.SearchName
+		if option.SearchName != "" {
+			params["search"] = option.SearchName
 		}
+
 		curProjects, err := listProjects(conf, params)
 		if err != nil {
 			return nil, err
 		}
+
 		if len(curProjects) == 0 {
 			return projects, nil
 		}
+
 		lastProjectID = curProjects[len(curProjects)-1].ID
+
 		projects = append(projects, curProjects...)
 		if len(curProjects) < perPage {
 			return projects, nil
@@ -101,26 +108,31 @@ func ListProjects(conf types.ConfigContext, op ListProjectsOption) ([]Project, e
 	}
 }
 
-func ListProjectBranches(conf types.ConfigContext, projectID int, op ListProjectBranchesOption) ([]Branch, error) {
+func ListProjectBranches(conf types.ConfigContext, projectID int, option ListProjectBranchesOption) ([]Branch, error) {
 	branches := []Branch{}
 	page := 1
+
 	for {
 		params := map[string]string{
 			"page":     strconv.Itoa(page),
 			"per_page": perPageStr,
 		}
-		if op.SearchName != "" {
-			params["search"] = op.SearchName
+		if option.SearchName != "" {
+			params["search"] = option.SearchName
 		}
+
 		curBranches, err := listProjectBranches(conf, projectID, params)
 		if err != nil {
 			return nil, err
 		}
+
 		if len(curBranches) == 0 {
 			return branches, nil
 		}
+
 		branches = append(branches, curBranches...)
-		page += 1
+		page++
+
 		if len(curBranches) < perPage {
 			return branches, nil
 		}
@@ -143,12 +155,13 @@ func listProjects(conf types.ConfigContext, params map[string]string) ([]Project
 		if err := json.Unmarshal(res.Bytes(), &projects); err != nil {
 			return nil, err
 		}
+
 		return projects, nil
 	} else if res.StatusCode() == 401 {
 		return nil, ErrNoAuthorization
 	}
 
-	return nil, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+	return nil, fmt.Errorf("%w: %d, %s", errHTTPCode, res.StatusCode(), res.String())
 }
 
 func listProjectBranches(conf types.ConfigContext, projectID int, params map[string]string) ([]Branch, error) {
@@ -167,10 +180,11 @@ func listProjectBranches(conf types.ConfigContext, projectID int, params map[str
 		if err := json.Unmarshal(res.Bytes(), &branches); err != nil {
 			return nil, err
 		}
+
 		return branches, nil
 	} else if res.StatusCode() == 401 {
 		return nil, ErrNoAuthorization
 	}
 
-	return nil, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+	return nil, fmt.Errorf("%w: %d, %s", errHTTPCode, res.StatusCode(), res.String())
 }

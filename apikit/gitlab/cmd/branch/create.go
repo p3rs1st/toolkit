@@ -12,46 +12,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCreateCommand(op *types.RootOptions) *cobra.Command {
+func NewCreateCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "create projectName/projectID[,projectName1/projectID1,...] newBranch refBranch",
-		Short:        "Create a branch",
-		SilenceUsage: true,
-		Args:         cobra.ExactArgs(3),
-		ValidArgsFunction: func(
-			cmd *cobra.Command, args []string, toComplete string,
-		) ([]string, cobra.ShellCompDirective) {
-			conf := op.GetConfig(cmd)
-			if len(args) == 0 {
-				projects, err := api.ListProjects(
-					conf,
-					api.ListProjectsOption{SearchName: toComplete},
-				)
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveError
-				}
-				return pkg.MapFunc(
-					projects,
-					func(p api.Project) string { return p.Name },
-				), cobra.ShellCompDirectiveNoFileComp
-			}
-			if len(args) == 1 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-
-			keys, err := util.ListUnionProjectBranches(
-				conf,
-				strings.Split(args[0], ","),
-				toComplete,
-			)
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveError
-			}
-			return keys, cobra.ShellCompDirectiveNoFileComp
-		},
+		Use:               "create projectName/projectID[,projectName1/projectID1,...] newBranch refBranch",
+		Short:             "Create a branch",
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(3),
+		ValidArgsFunction: createCommandValidArgsFunction(option),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectIDNames := strings.Split(args[0], ",")
-			conf := op.GetConfig(cmd)
+			conf := option.GetConfig(cmd)
 			newBranch := args[1]
 			refBranch := args[2]
 			projects := []api.Project{}
@@ -91,4 +61,42 @@ func NewCreateCommand(op *types.RootOptions) *cobra.Command {
 	}
 
 	return cmd
+}
+
+func createCommandValidArgsFunction(
+	option *types.RootOptions,
+) func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return func(
+		cmd *cobra.Command, args []string, toComplete string,
+	) ([]string, cobra.ShellCompDirective) {
+		conf := option.GetConfig(cmd)
+
+		if len(args) == 0 {
+			projects, err := api.ListProjects(
+				conf,
+				api.ListProjectsOption{SearchName: toComplete},
+			)
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveError
+			}
+
+			return pkg.MapFunc(
+				projects,
+				func(p api.Project) string { return p.Name },
+			), cobra.ShellCompDirectiveNoFileComp
+		} else if len(args) == 1 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		keys, err := util.ListUnionProjectBranches(
+			conf,
+			strings.Split(args[0], ","),
+			toComplete,
+		)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		return keys, cobra.ShellCompDirectiveNoFileComp
+	}
 }

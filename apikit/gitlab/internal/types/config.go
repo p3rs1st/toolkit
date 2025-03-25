@@ -1,8 +1,8 @@
 package types
 
 type Config struct {
-	CurrentContext string         `mapstructure:"current-context" json:"current-context"`
-	Contexts       ConfigContexts `mapstructure:"contexts" json:"contexts"`
+	CurrentContext string         `json:"current-context" mapstructure:"current-context"`
+	Contexts       ConfigContexts `json:"contexts"        mapstructure:"contexts"`
 }
 
 func (c Config) GetCurrentContext() ConfigContext {
@@ -14,13 +14,14 @@ func (c Config) GetCurrentContext() ConfigContext {
 			Token:   "",
 		}
 	}
+
 	return *ctx
 }
 
 type ConfigContext struct {
-	Name    string `mapstructure:"name" json:"name"`
-	BaseURL string `mapstructure:"base_url" json:"base_url"`
-	Token   string `mapstructure:"token" json:"token"`
+	Name    string `json:"name"     mapstructure:"name"`
+	BaseURL string `json:"base_url" mapstructure:"base_url"`
+	Token   string `json:"token"    mapstructure:"token"`
 }
 
 type ConfigContexts []ConfigContext
@@ -30,6 +31,7 @@ func (c ConfigContexts) GetByName(name string) *ConfigContext {
 	if idx == -1 {
 		return nil
 	}
+
 	return &c[idx]
 }
 
@@ -37,10 +39,12 @@ func (c ConfigContexts) GetIdxByName(name string) int {
 	if name == "" {
 		return -1
 	}
+
 	for i, context := range c {
 		if context.Name == name {
 			return i
 		}
 	}
+
 	return -1
 }

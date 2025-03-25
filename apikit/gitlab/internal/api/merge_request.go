@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+
 	"toolkit/apikit/gitlab/internal/types"
 )
 
@@ -16,9 +17,8 @@ type MergeRequest struct {
 }
 
 func CreateMergeRequest(
-	conf types.ConfigContext, project, sourceBranch, targetBranch, title string, op CreateMergeRequestOption,
+	conf types.ConfigContext, project, sourceBranch, targetBranch, title string, option CreateMergeRequestOption,
 ) (MergeRequest, error) {
-
 	client, req := AuthRequest(conf)
 	defer client.Close()
 
@@ -27,7 +27,7 @@ func CreateMergeRequest(
 		"target_branch": targetBranch,
 		"title":         title,
 	}
-	if op.RemoveSourceBranch {
+	if option.RemoveSourceBranch {
 		body["remove_source_branch"] = true
 	}
 
@@ -43,10 +43,11 @@ func CreateMergeRequest(
 		if err := json.Unmarshal(res.Bytes(), &mr); err != nil {
 			return MergeRequest{}, err
 		}
+
 		return mr, nil
 	} else if res.StatusCode() == 401 {
 		return MergeRequest{}, ErrNoAuthorization
 	}
 
-	return MergeRequest{}, fmt.Errorf("code %d: %s", res.StatusCode(), res.String())
+	return MergeRequest{}, fmt.Errorf("%w: %d, %s", errHTTPCode, res.StatusCode(), res.String())
 }

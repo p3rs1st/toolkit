@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewMergeRequestCommand(op *types.RootOptions) *cobra.Command {
+func NewMergeRequestCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mr",
 		Short: "GitLab merge request commands",
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	cmd.AddCommand(NewCreateCommand(op))
+	cmd.AddCommand(NewCreateCommand(option))
 
 	return cmd
 }

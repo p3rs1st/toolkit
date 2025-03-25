@@ -18,27 +18,27 @@ func NewGitlabCommand() *cobra.Command {
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	op := &types.RootOptions{}
+	option := &types.RootOptions{}
 
 	cmd.PersistentFlags().StringVarP(
-		&op.ConfigFilepath,
+		&option.ConfigFilepath,
 		"config",
 		"c",
 		types.DefaultConfigPath,
 		"Path to the config file",
 	)
 	cmd.PersistentFlags().StringVarP(
-		&op.CurrentContext,
+		&option.CurrentContext,
 		"context",
 		"t",
 		"",
 		"Tempoary override for current context",
 	)
 
-	cmd.AddCommand(config.NewConfigCommand(op))
-	cmd.AddCommand(project.NewProjectCommand(op))
-	cmd.AddCommand(mergerequest.NewMergeRequestCommand(op))
-	cmd.AddCommand(branch.NewBranchCommand(op))
+	cmd.AddCommand(config.NewConfigCommand(option))
+	cmd.AddCommand(project.NewProjectCommand(option))
+	cmd.AddCommand(mergerequest.NewMergeRequestCommand(option))
+	cmd.AddCommand(branch.NewBranchCommand(option))
 
 	return cmd
 }

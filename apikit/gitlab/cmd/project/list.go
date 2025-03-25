@@ -9,15 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewListCommand(op *types.RootOptions) *cobra.Command {
+func NewListCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "ls",
 		Aliases:      []string{"list"},
 		Short:        "List all projects",
 		SilenceUsage: true,
 		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			projects, err := api.ListProjects(op.GetConfig(cmd), api.ListProjectsOption{})
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			projects, err := api.ListProjects(option.GetConfig(cmd), api.ListProjectsOption{})
 			if err != nil {
 				return err
 			}

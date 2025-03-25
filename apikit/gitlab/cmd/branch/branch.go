@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewBranchCommand(op *types.RootOptions) *cobra.Command {
+func NewBranchCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "branch",
 		Short: "GitLab branches",
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	cmd.AddCommand(NewCreateCommand(op))
+	cmd.AddCommand(NewCreateCommand(option))
 
 	return cmd
 }

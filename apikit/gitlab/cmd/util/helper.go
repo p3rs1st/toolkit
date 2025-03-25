@@ -20,9 +20,14 @@ func UnknownCommand(cmd *cobra.Command, args []string) {
 func NoArguemntsCommandRun() func(cmd *cobra.Command, args []string) {
 	return func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			cmd.Help()
+			err := cmd.Help()
+			if err != nil {
+				panic(err)
+			}
+
 			return
 		}
+
 		UnknownCommand(cmd, args)
 	}
 }

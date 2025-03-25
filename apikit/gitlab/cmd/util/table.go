@@ -6,11 +6,13 @@ import (
 )
 
 func RenderTable[E any](cmd *cobra.Command, headers table.Row, datas []E, dataFunc func(E) []interface{}) {
-	t := table.NewWriter()
-	t.SetOutputMirror(cmd.OutOrStdout())
-	t.AppendHeader(headers)
+	writer := table.NewWriter()
+	writer.SetOutputMirror(cmd.OutOrStdout())
+	writer.AppendHeader(headers)
+
 	for _, data := range datas {
-		t.AppendRow(dataFunc(data))
+		writer.AppendRow(dataFunc(data))
 	}
-	t.Render()
+
+	writer.Render()
 }

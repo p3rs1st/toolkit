@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
 	"toolkit/apikit/gitlab/pkg"
 
 	"github.com/spf13/cobra"
@@ -30,79 +31,92 @@ const (
 	defaultCurrentContext string = "default"
 )
 
-func loadConfig(o *RootOptions, cmd *cobra.Command) func() {
+func loadConfig(option *RootOptions, cmd *cobra.Command) func() {
 	return func() {
-		o.viper = viper.New()
-		if info, err := os.Stat(o.ConfigFilepath); err != nil {
-			if err := os.MkdirAll(filepath.Dir(o.ConfigFilepath), 0755); err != nil {
-				cmd.PrintErrf("Error creating config directory %q\n  %v\n", filepath.Dir(o.ConfigFilepath), err)
+		option.viper = viper.New()
+		if info, err := os.Stat(option.ConfigFilepath); err != nil {
+			if err := os.MkdirAll(filepath.Dir(option.ConfigFilepath), 0o755); err != nil {
+				cmd.PrintErrf("Error creating config directory %q\n  %v\n", filepath.Dir(option.ConfigFilepath), err)
 				os.Exit(1)
 			}
-			if _, err := os.OpenFile(o.ConfigFilepath, os.O_RDONLY|os.O_CREATE, 0755); err != nil {
-				cmd.PrintErrf("Error opening config file %q\n  %v\n", o.ConfigFilepath, err)
+
+			if _, err := os.OpenFile(option.ConfigFilepath, os.O_RDONLY|os.O_CREATE, 0o755); err != nil {
+				cmd.PrintErrf("Error opening config file %q\n  %v\n", option.ConfigFilepath, err)
 				os.Exit(1)
 			}
 		} else if info.IsDir() {
-			cmd.PrintErrf("Config file %q is a directory\n", o.ConfigFilepath)
+			cmd.PrintErrf("Config file %q is a directory\n", option.ConfigFilepath)
 			os.Exit(1)
 		}
-		o.viper.SetConfigFile(o.ConfigFilepath)
-		o.viper.SetDefault("current-context", defaultCurrentContext)
-		if err := o.viper.ReadInConfig(); err != nil {
-			cmd.PrintErrf("Error reading config file %q\n  %v\n", o.ConfigFilepath, err)
+
+		option.viper.SetConfigFile(option.ConfigFilepath)
+		option.viper.SetDefault("current-context", defaultCurrentContext)
+
+		if err := option.viper.ReadInConfig(); err != nil {
+			cmd.PrintErrf("Error reading config file %q\n  %v\n", option.ConfigFilepath, err)
 			os.Exit(1)
 		}
-		if err := o.viper.Unmarshal(&o.config); err != nil {
-			cmd.PrintErrf("Error parsing config file %q\n  %v\n", o.ConfigFilepath, err)
+
+		if err := option.viper.Unmarshal(&option.config); err != nil {
+			cmd.PrintErrf("Error parsing config file %q\n  %v\n", option.ConfigFilepath, err)
 			os.Exit(1)
 		}
-		if o.config.CurrentContext == "" {
-			o.config.CurrentContext = defaultCurrentContext
+
+		if option.config.CurrentContext == "" {
+			option.config.CurrentContext = defaultCurrentContext
 		}
-		if o.CurrentContext != "" {
-			o.config.CurrentContext = o.CurrentContext
+
+		if option.CurrentContext != "" {
+			option.config.CurrentContext = option.CurrentContext
 		}
-		ctx := o.config.GetCurrentContext()
-		if o.config.Contexts.GetByName(o.config.CurrentContext) == nil {
-			o.config.Contexts = append(o.config.Contexts, ctx)
+
+		ctx := option.config.GetCurrentContext()
+		if option.config.Contexts.GetByName(option.config.CurrentContext) == nil {
+			option.config.Contexts = append(option.config.Contexts, ctx)
 		}
 	}
 }
 
-func (o *RootOptions) GetConfig(cmd *cobra.Command) ConfigContext {
-	o.once.Do(loadConfig(o, cmd))
-	return o.config.GetCurrentContext()
+func (option *RootOptions) GetConfig(cmd *cobra.Command) ConfigContext {
+	option.once.Do(loadConfig(option, cmd))
+
+	return option.config.GetCurrentContext()
 }
 
-func (o *RootOptions) GetRawConfig(cmd *cobra.Command) Config {
-	o.once.Do(loadConfig(o, cmd))
-	return o.config
+func (option *RootOptions) GetRawConfig(cmd *cobra.Command) Config {
+	option.once.Do(loadConfig(option, cmd))
+
+	return option.config
 }
 
-func (o *RootOptions) SaveCurrentContext(cmd *cobra.Command, name string) {
-	config := o.GetRawConfig(cmd)
+func (option *RootOptions) SaveCurrentContext(cmd *cobra.Command, name string) {
+	config := option.GetRawConfig(cmd)
 	if config.Contexts.GetByName(name) == nil {
-		o.MergeSaveConfigContext(cmd, config.GetCurrentContext())
+		option.MergeSaveConfigContext(cmd, config.GetCurrentContext())
 	}
-	if err := o.viper.MergeConfigMap(map[string]any{"current-context": name}); err != nil {
+
+	if err := option.viper.MergeConfigMap(map[string]any{"current-context": name}); err != nil {
 		cmd.PrintErrf("Error merging config\n  %v\n", err)
 		os.Exit(1)
 	}
-	if err := o.viper.WriteConfig(); err != nil {
-		cmd.PrintErrf("Error writing config file %q\n  %v\n", o.ConfigFilepath, err)
+
+	if err := option.viper.WriteConfig(); err != nil {
+		cmd.PrintErrf("Error writing config file %q\n  %v\n", option.ConfigFilepath, err)
 		os.Exit(1)
 	}
 }
 
-func (o *RootOptions) MergeSaveConfigContext(cmd *cobra.Command, configContext ConfigContext) {
-	config := o.GetRawConfig(cmd)
+func (option *RootOptions) MergeSaveConfigContext(cmd *cobra.Command, configContext ConfigContext) {
+	config := option.GetRawConfig(cmd)
 	ctxs := config.Contexts
+
 	idx := ctxs.GetIdxByName(config.CurrentContext)
 	if idx == -1 {
 		config.Contexts = append(config.Contexts, configContext)
 	} else {
 		ctxs[idx] = configContext
 	}
+
 	confMap := map[string]any{
 		"contexts": pkg.MapFunc(ctxs, func(ctx ConfigContext) map[string]any {
 			ctxBytes, err := json.Marshal(ctx)
@@ -115,32 +129,38 @@ func (o *RootOptions) MergeSaveConfigContext(cmd *cobra.Command, configContext C
 				cmd.PrintErrf("Error unmarshaling context %q\n  %v\n", ctx.Name, err)
 				os.Exit(1)
 			}
+
 			return ctxMap
 		}),
 	}
-	if err := o.viper.MergeConfigMap(confMap); err != nil {
+
+	if err := option.viper.MergeConfigMap(confMap); err != nil {
 		cmd.PrintErrf("Error merging config\n  %v\n", err)
 		os.Exit(1)
 	}
-	if err := o.viper.WriteConfig(); err != nil {
-		cmd.PrintErrf("Error writing config file %q\n  %v\n", o.ConfigFilepath, err)
+
+	if err := option.viper.WriteConfig(); err != nil {
+		cmd.PrintErrf("Error writing config file %q\n  %v\n", option.ConfigFilepath, err)
 		os.Exit(1)
 	}
 }
 
-func (o *RootOptions) AllSettings(cmd *cobra.Command) map[string]any {
-	o.once.Do(loadConfig(o, cmd))
-	settings := o.viper.AllSettings()
+func (option *RootOptions) AllSettings(cmd *cobra.Command) map[string]any {
+	option.once.Do(loadConfig(option, cmd))
+	settings := option.viper.AllSettings()
 	ctxInterface := settings["contexts"].([]interface{})
 	ctxs := make([]map[string]any, len(ctxInterface))
+
 	for i, ctx := range ctxInterface {
 		ctxMap, _ := ctx.(map[string]any)
 		ctxs[i] = ctxMap
 	}
+
 	for i, ctx := range ctxs {
 		if token, ok := ctx["token"].(string); ok && token != "" {
 			ctxs[i]["token"] = "*****"
 		}
 	}
+
 	return settings
 }

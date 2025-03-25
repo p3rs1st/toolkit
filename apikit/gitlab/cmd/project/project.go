@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewProjectCommand(op *types.RootOptions) *cobra.Command {
+func NewProjectCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "project",
 		Short: "GitLab projects",
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	cmd.AddCommand(NewListCommand(op))
+	cmd.AddCommand(NewListCommand(option))
 
 	return cmd
 }

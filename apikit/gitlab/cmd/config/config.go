@@ -7,15 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewConfigCommand(op *types.RootOptions) *cobra.Command {
+func NewConfigCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Edit local configuration file",
 		Run:   util.NoArguemntsCommandRun(),
 	}
 
-	cmd.AddCommand(NewSetCommand(op))
-	cmd.AddCommand(NewViewCommand(op))
+	cmd.AddCommand(NewSetCommand(option))
+	cmd.AddCommand(NewViewCommand(option))
 
 	cmd.AddGroup(
 		&cobra.Group{
@@ -27,8 +27,8 @@ func NewConfigCommand(op *types.RootOptions) *cobra.Command {
 			Title: "Context",
 		},
 	)
-	cmd.AddCommand(NewUseContextCommand(op))
-	cmd.AddCommand(NewGetContextsCommand(op))
+	cmd.AddCommand(NewUseContextCommand(option))
+	cmd.AddCommand(NewGetContextsCommand(option))
 
 	return cmd
 }

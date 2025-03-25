@@ -8,25 +8,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewGetContextsCommand(op *types.RootOptions) *cobra.Command {
+func NewGetContextsCommand(option *types.RootOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "get-contexts",
 		Short:   "Use a specific context from the config file",
 		GroupID: "context",
 		Args:    cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			config := op.GetRawConfig(cmd)
+		Run: func(cmd *cobra.Command, _ []string) {
+			config := option.GetRawConfig(cmd)
 
 			util.RenderTable(
 				cmd,
 				table.Row{"Current", "Name", "Base URL"},
 				config.Contexts,
-				func(c types.ConfigContext) []interface{} {
+				func(conf types.ConfigContext) []interface{} {
 					current := ""
-					if c.Name == config.CurrentContext {
+					if conf.Name == config.CurrentContext {
 						current = "*"
 					}
-					return []interface{}{current, c.Name, c.BaseURL}
+
+					return []interface{}{current, conf.Name, conf.BaseURL}
 				},
 			)
 		},
